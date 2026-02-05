@@ -15,7 +15,7 @@ buildscript {
         classpath("com.android.tools.build:gradle:8.7.3")
         // Cloudstream gradle plugin which makes everything work and builds plugins
         classpath("com.github.recloudstream:gradle:-SNAPSHOT")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10")
     }
 }
 
@@ -63,7 +63,8 @@ subprojects {
                 freeCompilerArgs.addAll(
                     "-Xno-call-assertions",
                     "-Xno-param-assertions",
-                    "-Xno-receiver-assertions"
+                    "-Xno-receiver-assertions",
+                    "-Xskip-metadata-version-check"
                 )
             }
         }
@@ -71,7 +72,7 @@ subprojects {
         configurations.all {
             resolutionStrategy.eachDependency {
                 if (requested.group == "org.jetbrains.kotlin") {
-                    useVersion("2.1.0")
+                    useVersion("2.1.10")
                 }
             }
         }
