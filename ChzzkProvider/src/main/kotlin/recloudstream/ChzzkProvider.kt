@@ -1,10 +1,12 @@
 package recloudstream
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.utils.DataStoreHelper.getKey
+import com.lagradost.cloudstream3.utils.DataStore.getKey
+import com.lagradost.cloudstream3.AcraApplication.Companion.context
 
 class ChzzkProvider : MainAPI() {
     override var mainUrl = "https://chzzk.naver.com"
@@ -138,8 +140,8 @@ class ChzzkProvider : MainAPI() {
     )
 
     private fun getCookies(): Map<String, String> {
-        val nidAut = getKey<String>("CHZZK_NID_AUT")
-        val nidSes = getKey<String>("CHZZK_NID_SES")
+        val nidAut = context?.getKey<String>("CHZZK_NID_AUT")
+        val nidSes = context?.getKey<String>("CHZZK_NID_SES")
         
         return if (!nidAut.isNullOrBlank() && !nidSes.isNullOrBlank()) {
             mapOf("Cookie" to "NID_AUT=$nidAut; NID_SES=$nidSes")
