@@ -59,11 +59,20 @@ subprojects {
         tasks.withType<KotlinJvmCompile> {
             compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_1_8) // Required
+                languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
                 freeCompilerArgs.addAll(
                     "-Xno-call-assertions",
                     "-Xno-param-assertions",
                     "-Xno-receiver-assertions"
                 )
+            }
+        }
+
+        configurations.all {
+            resolutionStrategy.eachDependency {
+                if (requested.group == "org.jetbrains.kotlin") {
+                    useVersion("2.1.0")
+                }
             }
         }
     }
