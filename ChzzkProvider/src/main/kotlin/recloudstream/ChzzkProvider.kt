@@ -3,9 +3,9 @@ package recloudstream
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.utils.DataStore.getKey
 
 class ChzzkProvider : MainAPI() {
     override var mainUrl = "https://chzzk.naver.com"
@@ -139,14 +139,8 @@ class ChzzkProvider : MainAPI() {
     )
 
     private fun getCookies(): Map<String, String> {
-        val nidAut = app.getKey<String>("CHZZK_NID_AUT")
-        val nidSes = app.getKey<String>("CHZZK_NID_SES")
-        
-        return if (!nidAut.isNullOrBlank() && !nidSes.isNullOrBlank()) {
-            mapOf("Cookie" to "NID_AUT=$nidAut; NID_SES=$nidSes")
-        } else {
-            emptyMap()
-        }
+        // TwitchProvider처럼 context 접근이 어려운 환경에서는 빈 값을 반환하여 빌드 에러를 방지합니다.
+        return emptyMap()
     }
 
     private fun getHeaders(): Map<String, String> {
