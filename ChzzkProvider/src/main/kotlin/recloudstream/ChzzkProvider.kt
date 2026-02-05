@@ -1,10 +1,10 @@
 package recloudstream
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import com.lagradost.cloudstream3.utils.DataStore.getKey
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.utils.DataStoreHelper.getKey
 
 class ChzzkProvider : MainAPI() {
     override var mainUrl = "https://chzzk.naver.com"
@@ -108,7 +108,7 @@ class ChzzkProvider : MainAPI() {
     data class FollowingItem(
         @JsonProperty("channelId") val channelId: String,
         @JsonProperty("channel") val channel: ChannelInfo,
-        @JsonProperty("streamer") val StreamerInfo?,
+        @JsonProperty("streamer") val streamer: StreamerInfo?,
         @JsonProperty("liveInfo") val liveInfo: LiveDetailContent?
     )
 
@@ -138,9 +138,8 @@ class ChzzkProvider : MainAPI() {
     )
 
     private fun getCookies(): Map<String, String> {
-        val context = app.baseContext
-        val nidAut = context.getKey<String>("CHZZK_NID_AUT")
-        val nidSes = context.getKey<String>("CHZZK_NID_SES")
+        val nidAut = getKey<String>("CHZZK_NID_AUT")
+        val nidSes = getKey<String>("CHZZK_NID_SES")
         
         return if (!nidAut.isNullOrBlank() && !nidSes.isNullOrBlank()) {
             mapOf("Cookie" to "NID_AUT=$nidAut; NID_SES=$nidSes")
@@ -169,13 +168,12 @@ class ChzzkProvider : MainAPI() {
                 
                 val followingMapped = followingData?.mapNotNull { item ->
                     val live = item.liveInfo ?: return@mapNotNull null
-                    newLiveStreamSearchResponse(
+                    newLiveSearchResponse(
                         live.liveTitle ?: "Unknown",
                         ChzzkData("live", item.channelId).toJson(),
                         TvType.Live
                     ) {
                         this.posterUrl = live.liveImageUrl?.replace("{type}", "480") ?: live.defaultThumbnailImageUrl
-                        this.posterHeaders = getHeaders()
                     }
                 }
                 
@@ -187,22 +185,15 @@ class ChzzkProvider : MainAPI() {
             }
         }
 
-        // 2. Fallback / Main Content
-        // Since we lack a generic "Home" API, we try to fetch some popular lives via search with empty keyword or a trick.
-        // Actually, just returning an empty list if not logged in is acceptable for a beta.
-        // Or we can try searching for "League of Legends" or common categories if we wanted.
-        // But let's leave it as Following-only or Empty for now to be safe with APIs.
-        
         return newHomePageResponse(items)
     }
 
-    override suspend fun search(query: String, page: Int): SearchResponseList? {
+    override suspend fun search(query: String): List<SearchResponse>? {
         val searchResults = mutableListOf<SearchResponse>()
-        val offset = (page - 1) * 12
 
         // Live Search
         try {
-            val liveUrl = "$API_URL/service/v1/search/lives?keyword=$query&offset=$offset&size=12"
+            val liveUrl = "$API_URL/service/v1/search/lives?keyword=$query&offset=0&size=12"
             val response = app.get(liveUrl, headers = getHeaders()).text
             val data = tryParseJson<ChzzkResponse<SearchResult>>(response)?.content?.data
             
@@ -210,20 +201,19 @@ class ChzzkProvider : MainAPI() {
                 val live = item.live ?: return@forEach
                 val channel = item.channel ?: item.live.channel ?: return@forEach
                 
-                searchResults.add(newLiveStreamSearchResponse(
+                searchResults.add(newLiveSearchResponse(
                     live.liveTitle ?: "Unknown",
                     ChzzkData("live", channel.channelId).toJson(),
                     TvType.Live
                 ) {
                     this.posterUrl = live.liveImageUrl?.replace("{type}", "480") ?: live.defaultThumbnailImageUrl
-                    this.posterHeaders = getHeaders()
                 })
             }
         } catch (e: Exception) {}
 
         // Video Search (VOD)
         try {
-            val videoUrl = "$API_URL/service/v1/search/videos?keyword=$query&offset=$offset&size=12"
+            val videoUrl = "$API_URL/service/v1/search/videos?keyword=$query&offset=0&size=12"
             val response = app.get(videoUrl, headers = getHeaders()).text
             val data = tryParseJson<ChzzkResponse<SearchResult>>(response)?.content?.data
             
@@ -236,7 +226,6 @@ class ChzzkProvider : MainAPI() {
                     TvType.Movie
                 ) {
                     this.posterUrl = video.thumbnailImageUrl
-                    this.posterHeaders = getHeaders()
                     this.year = video.publishDate?.take(4)?.toIntOrNull()
                 })
             }
@@ -255,8 +244,8 @@ class ChzzkProvider : MainAPI() {
             
             return newLiveStreamLoadResponse(
                 content.liveTitle ?: "Unknown",
-                url, // Keep ID for loadLinks
-                TvType.Live
+                url, // url
+                url  // dataUrl
             ) {
                 this.posterUrl = content.liveImageUrl?.replace("{type}", "1080") ?: content.defaultThumbnailImageUrl
                 this.plot = content.channel?.channelName
@@ -302,9 +291,12 @@ class ChzzkProvider : MainAPI() {
             
             mediaList?.filter { it.protocol == "HLS" || it.path?.endsWith(".m3u8") == true }?.forEach { media ->
                 media.path?.let { hlsUrl ->
-                    callback(ExtractorLink(
-                        name, name, hlsUrl, "", Qualities.Unknown.value, ExtractorLinkType.M3U8, headers = getHeaders()
-                    ))
+                    callback(newExtractorLink(
+                        name, name, hlsUrl
+                    ) {
+                        this.type = ExtractorLinkType.M3U8
+                        this.headers = getHeaders()
+                    })
                 }
             }
         } else {
@@ -318,7 +310,10 @@ class ChzzkProvider : MainAPI() {
                  val playbackData = tryParseJson<LivePlaybackJson>(content.liveRewindPlaybackJson)
                  playbackData?.media?.forEach { media ->
                       if (media.path != null) { // Usually standard HLS
-                          callback(ExtractorLink(name, "Replay", media.path, "", Qualities.Unknown.value, ExtractorLinkType.M3U8, headers = getHeaders()))
+                          callback(newExtractorLink(name, "Replay", media.path) {
+                              this.type = ExtractorLinkType.M3U8
+                              this.headers = getHeaders()
+                          })
                       }
                  }
                  return true
@@ -329,14 +324,14 @@ class ChzzkProvider : MainAPI() {
                 val vodUrl = "https://apis.naver.com/rmcnmv/rmcnmv/vod/play/v2.0/${content.videoId}?key=${content.inKey}"
                 val vodRes = app.get(vodUrl, headers = getHeaders()).text
                 
-                // Naver VOD response parsing (Manual extraction or JSON)
-                // "streams":[{"type":"HLS","keys":[{"type":"hls","value":"...m3u8"}]}]
-                // Simplified manual parsing for robustness
                 val parsedVod = tryParseJson<NaverVodResponse>(vodRes)
                 parsedVod?.streams?.forEach { stream ->
                     stream.keys?.forEach { key ->
                         if (key.type == "hls" && key.value != null) {
-                            callback(ExtractorLink(name, "VOD", key.value, "", Qualities.Unknown.value, ExtractorLinkType.M3U8, headers = getHeaders()))
+                            callback(newExtractorLink(name, "VOD", key.value) {
+                                this.type = ExtractorLinkType.M3U8
+                                this.headers = getHeaders()
+                            })
                         }
                     }
                 }

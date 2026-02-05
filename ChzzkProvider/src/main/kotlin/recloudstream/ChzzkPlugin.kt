@@ -11,12 +11,12 @@ import android.widget.TextView
 import android.view.Gravity
 import com.lagradost.cloudstream3.plugins.BasePlugin
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
-import com.lagradost.cloudstream3.utils.DataStore.setKey
-import com.lagradost.cloudstream3.utils.DataStore.getKey
+import com.lagradost.cloudstream3.utils.DataStoreHelper.setKey
+import com.lagradost.cloudstream3.utils.DataStoreHelper.getKey
 
 @CloudstreamPlugin
 class ChzzkPlugin: BasePlugin() {
-    override fun load(context: Context) {
+    override fun load() {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(ChzzkProvider())
     }
@@ -36,12 +36,12 @@ class ChzzkPlugin: BasePlugin() {
 
         val nidAutInput = EditText(context)
         nidAutInput.hint = "NID_AUT"
-        nidAutInput.setText(context.getKey<String>("CHZZK_NID_AUT") ?: "")
+        nidAutInput.setText(getKey<String>("CHZZK_NID_AUT") ?: "")
         layout.addView(nidAutInput)
 
         val nidSesInput = EditText(context)
         nidSesInput.hint = "NID_SES"
-        nidSesInput.setText(context.getKey<String>("CHZZK_NID_SES") ?: "")
+        nidSesInput.setText(getKey<String>("CHZZK_NID_SES") ?: "")
         layout.addView(nidSesInput)
 
         builder.setView(layout)
@@ -50,10 +50,10 @@ class ChzzkPlugin: BasePlugin() {
             val aut = nidAutInput.text.toString().trim()
             val ses = nidSesInput.text.toString().trim()
             
-            context.setKey("CHZZK_NID_AUT", aut)
-            context.setKey("CHZZK_NID_SES", ses)
+            setKey("CHZZK_NID_AUT", aut)
+            setKey("CHZZK_NID_SES", ses)
             
-            showToast(context, "Settings Saved")
+            Toast.makeText(context, "Settings Saved", Toast.LENGTH_SHORT).show()
         }
 
         builder.setNegativeButton("Cancel") { dialog, _ ->
