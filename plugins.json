@@ -1,0 +1,43 @@
+[
+    {
+        "iconUrl": "https://ssl.pstatic.net/static/nng/glive/icon/favicon.png",
+        "jarFileSize": 158094,
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/ouor/extensions",
+        "fileSize": 28649,
+        "status": 3,
+        "authors": [
+            "User"
+        ],
+        "tvTypes": [
+            "Live",
+            "TvSeries"
+        ],
+        "version": 1,
+        "internalName": "ChzzkProvider",
+        "jarUrl": "https://raw.githubusercontent.com/ouor/extensions/builds/ChzzkProvider.jar",
+        "description": "Watch livestreams from Chzzk",
+        "url": "https://raw.githubusercontent.com/ouor/extensions/builds/ChzzkProvider.cs3",
+        "name": "ChzzkProvider"
+    },
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=twitch.tv&sz=%size%",
+        "jarFileSize": 55509,
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/ouor/extensions",
+        "fileSize": 13665,
+        "status": 1,
+        "authors": [
+            "CranberrySoup"
+        ],
+        "tvTypes": [
+            "Live"
+        ],
+        "version": 2,
+        "internalName": "TwitchProvider",
+        "jarUrl": "https://raw.githubusercontent.com/ouor/extensions/builds/TwitchProvider.jar",
+        "description": "Watch livestreams from Twitch",
+        "url": "https://raw.githubusercontent.com/ouor/extensions/builds/TwitchProvider.cs3",
+        "name": "TwitchProvider"
+    }
+]
